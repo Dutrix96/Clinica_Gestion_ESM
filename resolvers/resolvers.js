@@ -7,6 +7,11 @@ const comprobarRol = (context, roles) => {
   }
 };
 
+const normalizarCita = cita => ({
+  ...cita,
+  fecha_hora: cita.fecha_hora instanceof Date ? cita.fecha_hora.toISOString() : String(cita.fecha_hora)
+});
+
 const resolvers = {
   Query: {
     citasFinalizadasPorMedico: async (_, args, context) => {
@@ -42,7 +47,7 @@ const resolvers = {
 
       sql += ' ORDER BY c.fecha_hora';
       const [rows] = await pool.query(sql, params);
-      return rows;
+      return rows.map(normalizarCita);
     },
     duracionPromedioPorMedico: async (_, args, context) => {
       comprobarRol(context, ['administrador']);
@@ -58,7 +63,19 @@ const resolvers = {
     },
     historialPaciente: async (_, { id_paciente }, context) => {
       comprobarRol(context, ['administrador', 'medico']);
-      return Historial.findOne({ id_paciente });
+      const historial = await Historial.findOne({ id_paciente }).lean();
+
+      if (!historial) {
+        return { id_paciente, entradas: [] };
+      }
+
+      return {
+        id_paciente: historial.id_paciente,
+        entradas: historial.entradas.map(entrada => ({
+          ...entrada,
+          fecha: entrada.fecha instanceof Date ? entrada.fecha.toISOString() : String(entrada.fecha)
+        }))
+      };
     }
   }
 };
