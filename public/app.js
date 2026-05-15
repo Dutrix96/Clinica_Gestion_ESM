@@ -33,7 +33,19 @@ const mostrarTab = id => {
 
 const aplicarRol = () => {
   $('#userInfo').textContent = `${usuario.nombre} · ${usuario.rol}`;
+
+  const permisosTabs = {
+    administrador: ['pacientes', 'citas', 'historial', 'admin'],
+    medico: ['pacientes', 'citas', 'historial'],
+    recepcionista: ['pacientes', 'citas']
+  };
+
+  $$('.tabs button').forEach(btn => {
+    btn.classList.toggle('hidden', !permisosTabs[usuario.rol].includes(btn.dataset.tab));
+  });
+
   $('#admin').classList.toggle('hidden', usuario.rol !== 'administrador');
+  $('#historial').classList.toggle('hidden', usuario.rol === 'recepcionista');
   $('#pacienteForm').classList.toggle('hidden', usuario.rol === 'medico');
   $('#citaForm').classList.toggle('hidden', usuario.rol === 'medico');
   $('#entradaForm').classList.toggle('hidden', usuario.rol !== 'medico');
@@ -43,7 +55,7 @@ const iniciarApp = async () => {
   $('#loginView').classList.add('hidden');
   $('#appView').classList.remove('hidden');
   aplicarRol();
-  mostrarTab('pacientes');
+  mostrarTab(usuario.rol === 'medico' ? 'citas' : 'pacientes');
   conectarSocket();
   await Promise.all([cargarPacientes(), cargarCitas(), cargarMetricas()]);
 };
