@@ -2,6 +2,9 @@ import { pool } from '../database/mysql.js';
 import { emitirActualizacionCitas } from '../helpers/socket.js';
 
 export const citasGet = async (req, res) => {
+  const condiciones = [];
+  const params = [];
+
   let sql = `
     SELECT c.*, p.nombre paciente_nombre, p.apellidos paciente_apellidos,
            u.nombre medico_nombre
@@ -9,11 +12,24 @@ export const citasGet = async (req, res) => {
       JOIN pacientes p ON p.id = c.id_paciente
       JOIN usuarios u ON u.id = c.id_medico
   `;
-  const params = [];
 
   if (req.roles.includes('medico') && !req.roles.includes('administrador')) {
-    sql += ' WHERE c.id_medico = ?';
+    condiciones.push('c.id_medico = ?');
     params.push(req.uid);
+  }
+
+  if (req.query.fecha) {
+    condiciones.push('DATE(c.fecha_hora) = ?');
+    params.push(req.query.fecha);
+  }
+
+  if (req.query.estado) {
+    condiciones.push('c.estado = ?');
+    params.push(req.query.estado);
+  }
+
+  if (condiciones.length) {
+    sql += ` WHERE ${condiciones.join(' AND ')}`;
   }
 
   sql += ' ORDER BY c.fecha_hora DESC';
@@ -29,7 +45,7 @@ export const citasPost = async (req, res) => {
     [id_paciente, id_medico, fecha_hora, motivo, duracion_minutos]
   );
 
-  await emitirActualizacionCitas();
+  await emitirActualizacionCitas('cita_creada');
   res.status(201).json({ id: result.insertId, id_paciente, id_medico, fecha_hora, motivo, duracion_minutos, estado: 'pendiente' });
 };
 
@@ -53,13 +69,13 @@ export const citaEstadoPut = async (req, res) => {
     : 'UPDATE citas SET estado = ? WHERE id = ?';
 
   const [result] = await pool.query(sql, params);
-  await emitirActualizacionCitas();
+  await emitirActualizacionCitas(`cita_${estado.replaceAll(' ', '_')}`);
 
   res.json({ actualizado: result.affectedRows > 0 });
 };
 
 export const citasDelete = async (req, res) => {
   const [result] = await pool.query('DELETE FROM citas WHERE id = ?', [req.params.id]);
-  await emitirActualizacionCitas();
+  await emitirActualizacionCitas('cita_eliminada');
   res.json({ eliminado: result.affectedRows > 0 });
 };

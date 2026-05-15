@@ -5,6 +5,11 @@ import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
   const { nombre, email, password, rol = 'recepcionista', especialidad = null } = req.body;
+  const rolesValidos = ['administrador', 'medico', 'recepcionista'];
+
+  if (!rolesValidos.includes(rol)) {
+    return res.status(400).json({ msg: 'Rol no valido.' });
+  }
 
   try {
     const [[existe]] = await pool.query('SELECT id FROM usuarios WHERE email = ?', [email]);
@@ -22,7 +27,14 @@ export const register = async (req, res) => {
         return res.status(401).json({ msg: 'Solo el administrador puede registrar mas usuarios.' });
       }
 
-      const { roles } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+      let roles = [];
+
+      try {
+        const payload = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+        roles = payload.roles || [];
+      } catch (error) {
+        return res.status(401).json({ msg: 'Token no valido.' });
+      }
 
       if (!roles.includes('administrador')) {
         return res.status(403).json({ msg: 'No tienes permisos para registrar usuarios.' });

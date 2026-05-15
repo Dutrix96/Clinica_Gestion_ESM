@@ -6,7 +6,7 @@ export const setIO = socketServer => {
   io = socketServer;
 };
 
-export const emitirActualizacionCitas = async () => {
+export const emitirActualizacionCitas = async (accion = 'actualizacion') => {
   if (!io) return;
 
   const [pendientes] = await pool.query(
@@ -17,6 +17,7 @@ export const emitirActualizacionCitas = async () => {
   );
 
   io.emit('citasActualizadas', {
+    accion,
     pendientesHoy: pendientes[0].total
   });
 };
