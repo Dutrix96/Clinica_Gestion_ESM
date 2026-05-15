@@ -10,9 +10,15 @@ const EntradaHistorialSchema = new mongoose.Schema({
   archivos_adjuntos: [{ type: String }]
 }, { _id: false });
 
-const HistorialSchema = new mongoose.Schema({
-  id_paciente: { type: Number, required: true, unique: true },
-  entradas: [EntradaHistorialSchema]
-}, { versionKey: false });
+const HistorialSchema = new mongoose.Schema(
+  {
+    id_paciente: { type: Number, required: true, unique: true },
+    entradas: [EntradaHistorialSchema]
+  },
+  {
+    versionKey: false,
+    collection: 'historiales'
+  }
+);
 
 export default mongoose.model('Historial', HistorialSchema);

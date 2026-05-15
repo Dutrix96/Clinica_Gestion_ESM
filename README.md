@@ -17,7 +17,7 @@ Proyecto de recuperacion de Node siguiendo la estructura de los ejemplos de clas
 ## Puesta en marcha
 
 1. Crear la base de datos SQL importando `sql/clinica_node.sql`.
-2. Importar `mongo/historiales.json` en MongoDB, base `clinica_node`, coleccion `historials`.
+2. Importar `mongo/historiales.json` en MongoDB, base `clinica_node`, coleccion `historiales`.
 3. Copiar `.env.example` como `.env` y ajustar usuario/password de MySQL.
 4. Instalar dependencias con `npm install`.
 5. Arrancar con `npm run dev` o `npm start`.
