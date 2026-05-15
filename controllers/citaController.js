@@ -2,6 +2,9 @@ import { pool } from '../database/mysql.js';
 import { emitirActualizacionCitas } from '../helpers/socket.js';
 
 export const citasGet = async (req, res) => {
+  const condiciones = [];
+  const params = [];
+
   let sql = `
     SELECT c.*, p.nombre paciente_nombre, p.apellidos paciente_apellidos,
            u.nombre medico_nombre
@@ -9,11 +12,24 @@ export const citasGet = async (req, res) => {
       JOIN pacientes p ON p.id = c.id_paciente
       JOIN usuarios u ON u.id = c.id_medico
   `;
-  const params = [];
 
   if (req.roles.includes('medico') && !req.roles.includes('administrador')) {
-    sql += ' WHERE c.id_medico = ?';
+    condiciones.push('c.id_medico = ?');
     params.push(req.uid);
+  }
+
+  if (req.query.fecha) {
+    condiciones.push('DATE(c.fecha_hora) = ?');
+    params.push(req.query.fecha);
+  }
+
+  if (req.query.estado) {
+    condiciones.push('c.estado = ?');
+    params.push(req.query.estado);
+  }
+
+  if (condiciones.length) {
+    sql += ` WHERE ${condiciones.join(' AND ')}`;
   }
 
   sql += ' ORDER BY c.fecha_hora DESC';
