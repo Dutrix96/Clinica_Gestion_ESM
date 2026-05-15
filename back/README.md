@@ -1,0 +1,86 @@
+# Plataforma de Gestion Clinica
+
+Proyecto de recuperacion de Node siguiendo la estructura de los ejemplos de clase: `app`, `routes`, `controllers`, `middlewares`, `models`, `typeDefs` y `resolvers`.
+
+## Estructura
+
+- `app`: arranque de Express, Apollo Server y WebSockets.
+- `routes`: puntos de acceso REST separados por entidad.
+- `controllers`: logica de cada ruta, siguiendo el patron usado en clase.
+- `middlewares`: verificacion JWT y control de roles.
+- `database`: conexion a MySQL para informacion estructurada.
+- `models`: modelos Mongoose para informacion documental.
+- `typeDefs` y `resolvers`: consultas GraphQL obligatorias.
+- `sql` y `mongo`: datos exportados para la entrega.
+
+El cliente nuevo esta en `../front` y esta hecho con React.
+
+## Puesta en marcha
+
+1. Crear la base de datos SQL importando `sql/clinica_node.sql`.
+2. Importar `mongo/historiales.json` en MongoDB, base `clinica_node`, coleccion `historiales`.
+3. Copiar `.env.example` como `.env` y ajustar usuario/password de MySQL.
+4. Instalar dependencias con `npm install`.
+5. Arrancar con `npm run dev` o `npm start`.
+6. Arrancar el frontend desde `../front` y abrir `http://localhost:5173`.
+
+## Checklist de entrega
+
+- SQL: usuarios, pacientes y citas en `sql/clinica_node.sql`.
+- MongoDB: historiales clinicos en `mongo/historiales.json`.
+- REST: autenticacion, usuarios, pacientes, citas, historiales y metricas.
+- Seguridad: JWT en cabecera `x-token` y permisos por rol.
+- GraphQL: consultas obligatorias en `/graphql`.
+- WebSockets: contador de citas pendientes y agenda actualizada en tiempo real.
+- Cliente React: login, panel por rol, pacientes, citas e historiales en `../front`.
+- Verificacion rapida: `npm run check`.
+
+Usuarios de prueba:
+
+- `admin@clinica.test` / `123456`
+- `laura@clinica.test` / `123456`
+- `recepcion@clinica.test` / `123456`
+
+## GraphQL
+
+Ruta privada: `POST /graphql`
+
+Enviar el token en la cabecera `x-token`.
+
+Consultas obligatorias implementadas:
+
+- `citasFinalizadasPorMedico`
+- `citasPendientesHoy`
+- `duracionPromedioPorMedico`
+- `historialPaciente(id_paciente: Int!)`
+
+Ejemplo:
+
+```graphql
+query {
+  citasFinalizadasPorMedico {
+    id_medico
+    medico
+    total
+  }
+  citasPendientesHoy {
+    id
+    paciente
+    medico
+    fecha_hora
+    estado
+  }
+  duracionPromedioPorMedico {
+    medico
+    promedio_minutos
+  }
+  historialPaciente(id_paciente: 1) {
+    id_paciente
+    entradas {
+      fecha
+      diagnostico
+      tratamiento
+    }
+  }
+}
+```

@@ -1,10 +1,10 @@
 :root {
   color-scheme: light;
-  --bg: #f6f7f9;
+  --bg: #f5f7fa;
   --surface: #ffffff;
   --line: #d8dee8;
   --text: #17202a;
-  --muted: #607086;
+  --muted: #5f6f85;
   --brand: #176b87;
   --accent: #2f8f6f;
   --danger: #b42318;
@@ -17,13 +17,19 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg);
   color: var(--text);
+  background: var(--bg);
 }
 
-.layout {
+.shell {
   width: min(1180px, calc(100% - 32px));
   margin: 24px auto;
+}
+
+.login-shell {
+  min-height: 90vh;
+  display: grid;
+  place-items: center;
 }
 
 .panel {
@@ -31,19 +37,17 @@ body {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 20px;
-  margin-bottom: 16px;
 }
 
-.login {
-  max-width: 420px;
-  margin: 12vh auto;
+.login-panel {
+  width: min(420px, 100%);
 }
 
 .topbar {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
+  grid-template-columns: 1fr auto minmax(180px, auto) auto;
   gap: 16px;
+  align-items: center;
   margin-bottom: 16px;
 }
 
@@ -79,12 +83,8 @@ p {
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
-}
-
-.tabs button {
-  min-width: 110px;
+  margin-bottom: 16px;
 }
 
 button {
@@ -96,7 +96,8 @@ button {
   cursor: pointer;
 }
 
-button.secondary {
+button.active,
+button:hover {
   background: var(--accent);
 }
 
@@ -118,6 +119,11 @@ textarea {
   resize: vertical;
 }
 
+.stack {
+  display: grid;
+  gap: 10px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -127,7 +133,7 @@ textarea {
 
 .inline {
   display: grid;
-  grid-template-columns: minmax(120px, 260px) auto;
+  grid-template-columns: minmax(160px, 260px) auto;
   gap: 10px;
   justify-content: start;
   margin-bottom: 16px;
@@ -153,12 +159,10 @@ textarea {
   flex-wrap: wrap;
 }
 
-.muted {
-  color: var(--muted);
-}
-
-.hidden {
-  display: none !important;
+.error {
+  margin-top: 12px;
+  color: var(--danger);
+  font-weight: 700;
 }
 
 pre {
@@ -169,7 +173,7 @@ pre {
   overflow: auto;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .topbar {
     grid-template-columns: 1fr;
   }
