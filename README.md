@@ -2,6 +2,18 @@
 
 Proyecto de recuperacion de Node siguiendo la estructura de los ejemplos de clase: `app`, `routes`, `controllers`, `middlewares`, `models`, `typeDefs` y `resolvers`.
 
+## Estructura
+
+- `app`: arranque de Express, Apollo Server y WebSockets.
+- `routes`: puntos de acceso REST separados por entidad.
+- `controllers`: logica de cada ruta, siguiendo el patron usado en clase.
+- `middlewares`: verificacion JWT y control de roles.
+- `database`: conexion a MySQL para informacion estructurada.
+- `models`: modelos Mongoose para informacion documental.
+- `typeDefs` y `resolvers`: consultas GraphQL obligatorias.
+- `public`: cliente HTML, CSS y JavaScript funcional.
+- `sql` y `mongo`: datos exportados para la entrega.
+
 ## Puesta en marcha
 
 1. Crear la base de datos SQL importando `sql/clinica_node.sql`.
