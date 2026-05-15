@@ -83,6 +83,10 @@ p {
   flex-wrap: wrap;
 }
 
+.tabs button {
+  min-width: 110px;
+}
+
 button {
   border: 0;
   border-radius: 6px;
