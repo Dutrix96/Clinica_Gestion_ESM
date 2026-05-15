@@ -23,6 +23,17 @@ Proyecto de recuperacion de Node siguiendo la estructura de los ejemplos de clas
 5. Arrancar con `npm run dev` o `npm start`.
 6. Abrir `http://localhost:9090`.
 
+## Checklist de entrega
+
+- SQL: usuarios, pacientes y citas en `sql/clinica_node.sql`.
+- MongoDB: historiales clinicos en `mongo/historiales.json`.
+- REST: autenticacion, usuarios, pacientes, citas, historiales y metricas.
+- Seguridad: JWT en cabecera `x-token` y permisos por rol.
+- GraphQL: consultas obligatorias en `/graphql`.
+- WebSockets: contador de citas pendientes y agenda actualizada en tiempo real.
+- Cliente: login, panel por rol, pacientes, citas e historiales.
+- Verificacion rapida: `npm run check`.
+
 Usuarios de prueba:
 
 - `admin@clinica.test` / `123456`

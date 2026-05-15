@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node ./app/app.js",
-    "dev": "nodemon ./app/app.js"
+    "dev": "nodemon ./app/app.js",
+    "check": "node --check ./app/app.js && node --check ./app/server.js"
   },
   "keywords": [],
   "author": "",
