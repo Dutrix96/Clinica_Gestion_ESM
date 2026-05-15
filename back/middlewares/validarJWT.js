@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { env } from '../helpers/env.js';
 
 export const validarJWT = (req, res, next) => {
   const token = req.header('x-token');
@@ -8,7 +9,7 @@ export const validarJWT = (req, res, next) => {
   }
 
   try {
-    const { uid, roles } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+    const { uid, roles } = jwt.verify(token, env.SECRETORPRIVATEKEY);
     req.uid = uid;
     req.roles = roles;
     next();
@@ -26,7 +27,7 @@ export const validarJWT_GQL = context => {
   }
 
   try {
-    const { uid, roles } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+    const { uid, roles } = jwt.verify(token, env.SECRETORPRIVATEKEY);
     context.user = { uid, roles };
     return context;
   } catch (error) {

@@ -20,7 +20,14 @@ Backend:
 ```bash
 cd back
 npm install
+npm run seed
 npm start
+```
+
+En Windows puedes crear el archivo de entorno asi, aunque el backend ya trae valores por defecto de desarrollo:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Frontend:

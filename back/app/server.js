@@ -12,6 +12,7 @@ import typeDefs from '../typeDefs/typeDefs.js';
 import resolvers from '../resolvers/resolvers.js';
 import { validarJWT_GQL } from '../middlewares/validarJWT.js';
 import { setIO } from '../helpers/socket.js';
+import { env } from '../helpers/env.js';
 
 import { router as authRoutes } from '../routes/authRoutes.js';
 import { router as userRoutes } from '../routes/userRoutes.js';
@@ -60,11 +61,11 @@ class Server {
 
   conectarMongoose() {
     mongoose.set('strictQuery', false);
-    mongoose.connect(process.env.MONGO_URL, { dbName: process.env.MONGO_DATABASE });
+    mongoose.connect(env.MONGO_URL, { dbName: env.MONGO_DATABASE });
     this.db = mongoose.connection;
     this.db.on('error', console.error.bind(console, 'Error de conexion a MongoDB:'));
     this.db.once('open', () => {
-      console.log(kleur.green(`Conexion exitosa a MongoDB: ${process.env.MONGO_URL}/${process.env.MONGO_DATABASE}`));
+      console.log(kleur.green(`Conexion exitosa a MongoDB: ${env.MONGO_URL}/${env.MONGO_DATABASE}`));
     });
   }
 
@@ -108,11 +109,11 @@ class Server {
   }
 
   listen() {
-    this.httpServer.listen(process.env.PORT, () => {
-      console.log(kleur.green(`Servidor escuchando en: ${process.env.DB_URL_GRAPHQL}:${process.env.PORT}`));
-      console.log(kleur.blue(`API Auth: ${process.env.DB_URL_GRAPHQL}:${process.env.PORT}${this.authPath}`));
-      console.log(kleur.blue(`API Citas: ${process.env.DB_URL_GRAPHQL}:${process.env.PORT}${this.citasPath}`));
-      console.log(kleur.red(`GraphQL privado: ${process.env.DB_URL_GRAPHQL}:${process.env.PORT}${this.graphQLPath}`));
+    this.httpServer.listen(env.PORT, () => {
+      console.log(kleur.green(`Servidor escuchando en: ${env.DB_URL_GRAPHQL}:${env.PORT}`));
+      console.log(kleur.blue(`API Auth: ${env.DB_URL_GRAPHQL}:${env.PORT}${this.authPath}`));
+      console.log(kleur.blue(`API Citas: ${env.DB_URL_GRAPHQL}:${env.PORT}${this.citasPath}`));
+      console.log(kleur.red(`GraphQL privado: ${env.DB_URL_GRAPHQL}:${env.PORT}${this.graphQLPath}`));
     });
   }
 }
