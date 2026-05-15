@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { pool } from '../database/mysql.js';
 import { generarJWT_Roles } from '../helpers/generate_jwt.js';
 import jwt from 'jsonwebtoken';
+import { env } from '../helpers/env.js';
 
 export const register = async (req, res) => {
   const { nombre, email, password, rol = 'recepcionista', especialidad = null } = req.body;
@@ -30,7 +31,7 @@ export const register = async (req, res) => {
       let roles = [];
 
       try {
-        const payload = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+        const payload = jwt.verify(token, env.SECRETORPRIVATEKEY);
         roles = payload.roles || [];
       } catch (error) {
         return res.status(401).json({ msg: 'Token no valido.' });
