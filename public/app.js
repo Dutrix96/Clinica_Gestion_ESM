@@ -52,8 +52,12 @@ const conectarSocket = () => {
   socket = io();
   socket.on('citasActualizadas', data => {
     $('#pendientesHoy').textContent = data.pendientesHoy;
+    $('#socketMsg').textContent = `Agenda actualizada: ${data.accion}`;
     cargarCitas();
     cargarMetricas();
+    setTimeout(() => {
+      $('#socketMsg').textContent = '';
+    }, 3500);
   });
 };
 

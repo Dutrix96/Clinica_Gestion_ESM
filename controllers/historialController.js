@@ -34,6 +34,6 @@ export const entradaHistorialPost = async (req, res) => {
   );
 
   await pool.query('UPDATE citas SET estado = ? WHERE id = ?', ['finalizada', id_cita]);
-  await emitirActualizacionCitas();
+  await emitirActualizacionCitas('cita_finalizada_con_historial');
   res.status(201).json(historial);
 };

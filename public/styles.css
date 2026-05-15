@@ -70,6 +70,12 @@ p {
   color: var(--brand);
 }
 
+.notice {
+  min-height: 22px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .tabs {
   display: flex;
   gap: 8px;
