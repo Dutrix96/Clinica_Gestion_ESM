@@ -37,6 +37,10 @@ CREATE TABLE citas (
   FOREIGN KEY (id_medico) REFERENCES usuarios(id)
 );
 
+CREATE INDEX idx_citas_fecha_estado ON citas(fecha_hora, estado);
+CREATE INDEX idx_citas_medico_estado ON citas(id_medico, estado);
+CREATE INDEX idx_pacientes_dni ON pacientes(dni);
+
 INSERT INTO usuarios (nombre, email, password_hash, rol, especialidad) VALUES
 ('Admin Clinica', 'admin@clinica.test', '$2b$10$gOYX6hZTDvQB77QvU6mqSuW.5U6XcT2nyVKmJvQZp3E27hJHkg31m', 'administrador', NULL),
 ('Dra. Laura Mesa', 'laura@clinica.test', '$2b$10$gOYX6hZTDvQB77QvU6mqSuW.5U6XcT2nyVKmJvQZp3E27hJHkg31m', 'medico', 'Medicina general'),
