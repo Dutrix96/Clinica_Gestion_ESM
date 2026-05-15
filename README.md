@@ -41,3 +41,34 @@ Consultas obligatorias implementadas:
 - `citasPendientesHoy`
 - `duracionPromedioPorMedico`
 - `historialPaciente(id_paciente: Int!)`
+
+Ejemplo:
+
+```graphql
+query {
+  citasFinalizadasPorMedico {
+    id_medico
+    medico
+    total
+  }
+  citasPendientesHoy {
+    id
+    paciente
+    medico
+    fecha_hora
+    estado
+  }
+  duracionPromedioPorMedico {
+    medico
+    promedio_minutos
+  }
+  historialPaciente(id_paciente: 1) {
+    id_paciente
+    entradas {
+      fecha
+      diagnostico
+      tratamiento
+    }
+  }
+}
+```
