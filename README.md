@@ -7,6 +7,14 @@ Proyecto separado en dos carpetas al mismo nivel:
 
 ## Arranque
 
+Instalacion completa:
+
+```bash
+make install
+make seed
+make dev
+```
+
 Backend:
 
 ```bash
