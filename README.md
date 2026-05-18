@@ -10,9 +10,25 @@ Proyecto separado en dos carpetas al mismo nivel:
 Instalacion completa:
 
 ```bash
-make install
-make seed
-make dev
+npm run install:all
+npm run seed
+```
+
+Para arrancar en Visual Studio Code abre dos terminales:
+
+```bash
+npm run back
+```
+
+```bash
+npm run front
+```
+
+Si un puerto se queda ocupado:
+
+```bash
+npm run stop:back
+npm run stop:front
 ```
 
 Backend:

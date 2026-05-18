@@ -1,0 +1,14 @@
+{
+  "name": "clinica-gestion-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix back && npm install --prefix front",
+    "seed": "npm run seed --prefix back",
+    "back": "npm start --prefix back",
+    "front": "npm run dev --prefix front",
+    "check": "npm run check --prefix back && npm run build --prefix front",
+    "stop:back": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-port.ps1 9090",
+    "stop:front": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-port.ps1 5173"
+  }
+}

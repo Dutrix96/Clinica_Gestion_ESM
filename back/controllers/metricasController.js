@@ -1,14 +1,26 @@
 import { pool } from '../database/mysql.js';
+import { actualizarNoPresentados } from '../helpers/citasEstado.js';
 
 export const metricasGet = async (req, res) => {
+  await actualizarNoPresentados();
+
   const [[usuarios]] = await pool.query('SELECT COUNT(*) total FROM usuarios');
   const [[pacientes]] = await pool.query('SELECT COUNT(*) total FROM pacientes');
   const [[citas]] = await pool.query('SELECT COUNT(*) total FROM citas');
+  const condiciones = ["c.estado = 'pendiente'", 'DATE(c.fecha_hora) = CURDATE()', "u.rol = 'medico'"];
+  const params = [];
+
+  if (req.roles.includes('medico') && !req.roles.includes('administrador')) {
+    condiciones.push('c.id_medico = ?');
+    params.push(req.uid);
+  }
+
   const [[pendientesHoy]] = await pool.query(
     `SELECT COUNT(*) total
-       FROM citas
-      WHERE estado = 'pendiente'
-        AND DATE(fecha_hora) = CURDATE()`
+       FROM citas c
+       JOIN usuarios u ON u.id = c.id_medico
+      WHERE ${condiciones.join(' AND ')}`,
+    params
   );
 
   res.json({

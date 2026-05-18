@@ -1,5 +1,6 @@
 import { pool } from '../database/mysql.js';
 import Historial from '../models/historialMongoose.js';
+import { emitirActualizacionPacientes } from '../helpers/socket.js';
 
 const nombres = ['Ana', 'Lucas', 'Marta', 'Javier', 'Sofia', 'Pablo', 'Irene', 'Diego'];
 const apellidos = ['Garcia', 'Lopez', 'Martinez', 'Sanchez', 'Perez', 'Romero', 'Torres', 'Ruiz'];
@@ -28,13 +29,21 @@ export const pacientesPost = async (req, res) => {
   );
 
   await Historial.create({ id_paciente: result.insertId, entradas: [] });
+  emitirActualizacionPacientes('paciente_creado');
   res.status(201).json({ id: result.insertId, nombre, apellidos, dni, telefono, email, fecha_nacimiento });
 };
 
 export const pacientesDelete = async (req, res) => {
+  const [[paciente]] = await pool.query('SELECT id FROM pacientes WHERE id = ?', [req.params.id]);
+
+  if (!paciente) {
+    return res.status(404).json({ msg: 'Paciente no encontrado.' });
+  }
+
   await pool.query('DELETE FROM citas WHERE id_paciente = ?', [req.params.id]);
   const [result] = await pool.query('DELETE FROM pacientes WHERE id = ?', [req.params.id]);
   await Historial.deleteOne({ id_paciente: Number(req.params.id) });
+  emitirActualizacionPacientes('paciente_eliminado');
 
   res.json({ eliminado: result.affectedRows > 0 });
 };
@@ -66,5 +75,6 @@ export const generarPacientes = async (req, res) => {
     creados.push({ id: result.insertId, nombre, apellidos: apellidosPaciente, dni });
   }
 
+  emitirActualizacionPacientes('pacientes_generados');
   res.status(201).json({ creados: creados.length, pacientes: creados });
 };

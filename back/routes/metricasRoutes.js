@@ -5,4 +5,4 @@ import { tieneRol } from '../middlewares/validarRoles.js';
 
 export const router = Router();
 
-router.get('/', [validarJWT, tieneRol('administrador')], metricasGet);
+router.get('/', [validarJWT, tieneRol('administrador', 'recepcionista', 'medico')], metricasGet);

@@ -22,29 +22,30 @@ const emptyCita = {
   duracion_minutos: 30
 };
 
-const emptyEntrada = {
-  id_paciente: '',
-  id_cita: '',
+const emptyFinalizacion = {
   diagnostico: '',
   tratamiento: '',
   observaciones: ''
 };
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token') || '');
-  const [usuario, setUsuario] = useState(JSON.parse(localStorage.getItem('usuario') || 'null'));
+  const [token, setToken] = useState(sessionStorage.getItem('token') || '');
+  const [usuario, setUsuario] = useState(JSON.parse(sessionStorage.getItem('usuario') || 'null'));
   const [tab, setTab] = useState('pacientes');
   const [login, setLogin] = useState({ email: '', password: '' });
   const [msg, setMsg] = useState('');
-  const [socketMsg, setSocketMsg] = useState('');
   const [pendientesHoy, setPendientesHoy] = useState(0);
+  const [usuarios, setUsuarios] = useState([]);
   const [pacientes, setPacientes] = useState([]);
+  const [medicos, setMedicos] = useState([]);
   const [citas, setCitas] = useState([]);
   const [metricas, setMetricas] = useState(null);
   const [historial, setHistorial] = useState(null);
   const [pacienteForm, setPacienteForm] = useState(emptyPaciente);
   const [citaForm, setCitaForm] = useState(emptyCita);
-  const [entradaForm, setEntradaForm] = useState(emptyEntrada);
+  const [citaEditando, setCitaEditando] = useState(null);
+  const [citaCerrando, setCitaCerrando] = useState(null);
+  const [finalizacionForm, setFinalizacionForm] = useState(emptyFinalizacion);
   const [usuarioForm, setUsuarioForm] = useState({
     nombre: '',
     email: '',
@@ -52,6 +53,7 @@ function App() {
     rol: 'medico',
     especialidad: ''
   });
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [cantidad, setCantidad] = useState(5);
 
   const tabs = useMemo(() => {
@@ -75,7 +77,11 @@ function App() {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.msg || 'Error en la peticion');
+    if (!res.ok) {
+      setMsg(data.msg || 'Error en la peticion');
+      throw new Error(data.msg || 'Error en la peticion');
+    }
+    setMsg('');
     return data;
   };
 
@@ -89,16 +95,27 @@ function App() {
     setCitas(data);
   };
 
+  const cargarMedicos = async () => {
+    const data = await authFetch('/api/usuarios/medicos');
+    setMedicos(data);
+  };
+
   const cargarMetricas = async () => {
-    if (!usuario || usuario.rol !== 'administrador') return;
+    if (!usuario) return;
     const data = await authFetch('/api/metricas');
     setMetricas(data);
     setPendientesHoy(data.pendientesHoy);
   };
 
+  const cargarUsuarios = async () => {
+    if (!usuario || usuario.rol !== 'administrador') return;
+    const data = await authFetch('/api/usuarios');
+    setUsuarios(data);
+  };
+
   const cargarTodo = async () => {
     try {
-      await Promise.all([cargarPacientes(), cargarCitas(), cargarMetricas()]);
+      await Promise.all([cargarPacientes(), cargarMedicos(), cargarCitas(), cargarMetricas(), cargarUsuarios()]);
     } catch (error) {
       setMsg(error.message);
     }
@@ -112,10 +129,12 @@ function App() {
     const socket = io('http://localhost:9090');
     socket.on('citasActualizadas', data => {
       setPendientesHoy(data.pendientesHoy);
-      setSocketMsg(`Agenda actualizada: ${data.accion}`);
       cargarCitas();
       cargarMetricas();
-      setTimeout(() => setSocketMsg(''), 3500);
+    });
+    socket.on('pacientesActualizados', data => {
+      cargarPacientes();
+      cargarMetricas();
     });
 
     return () => socket.disconnect();
@@ -133,8 +152,8 @@ function App() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Login incorrecto');
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('usuario', JSON.stringify(data.usuario));
       setToken(data.token);
       setUsuario(data.usuario);
     } catch (error) {
@@ -143,7 +162,7 @@ function App() {
   };
 
   const logout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     setToken('');
     setUsuario(null);
   };
@@ -152,21 +171,52 @@ function App() {
     event.preventDefault();
     await authFetch('/api/pacientes', { method: 'POST', body: JSON.stringify(pacienteForm) });
     setPacienteForm(emptyPaciente);
-    cargarPacientes();
+    await cargarPacientes();
   };
 
   const crearCita = async event => {
     event.preventDefault();
-    await authFetch('/api/citas', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...citaForm,
-        id_paciente: Number(citaForm.id_paciente),
-        id_medico: Number(citaForm.id_medico),
-        duracion_minutos: Number(citaForm.duracion_minutos)
-      })
+    const payload = {
+      ...citaForm,
+      id_paciente: Number(citaForm.id_paciente),
+      id_medico: Number(citaForm.id_medico),
+      duracion_minutos: Number(citaForm.duracion_minutos)
+    };
+
+    await authFetch(citaEditando ? `/api/citas/${citaEditando}` : '/api/citas', {
+      method: citaEditando ? 'PUT' : 'POST',
+      body: JSON.stringify(payload)
     });
     setCitaForm(emptyCita);
+    setCitaEditando(null);
+    await cargarCitas();
+  };
+
+  const editarCita = cita => {
+    setCitaEditando(cita.id);
+    setCitaForm({
+      id_paciente: String(cita.id_paciente),
+      id_medico: String(cita.id_medico),
+      fecha_hora: new Date(cita.fecha_hora).toISOString().slice(0, 16),
+      motivo: cita.motivo,
+      duracion_minutos: cita.duracion_minutos
+    });
+    setTab('citas');
+  };
+
+  const cancelarEdicionCita = () => {
+    setCitaEditando(null);
+    setCitaForm(emptyCita);
+  };
+
+  const cancelarCita = async id => {
+    await authFetch(`/api/citas/${id}/estado`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        estado: 'cancelada'
+      })
+    });
+    await cargarCitas();
   };
 
   const cambiarEstado = async (id, estado) => {
@@ -174,17 +224,44 @@ function App() {
       method: 'PUT',
       body: JSON.stringify({ estado })
     });
-    cargarCitas();
+    await cargarCitas();
+  };
+
+  const abrirFinalizacion = cita => {
+    setCitaCerrando(cita.id);
+    setFinalizacionForm(emptyFinalizacion);
+  };
+
+  const cancelarFinalizacion = () => {
+    setCitaCerrando(null);
+    setFinalizacionForm(emptyFinalizacion);
+  };
+
+  const guardarFinalizacion = async (event, cita) => {
+    event.preventDefault();
+    await authFetch('/api/historiales/entrada', {
+      method: 'POST',
+      body: JSON.stringify({
+        id_paciente: Number(cita.id_paciente),
+        id_cita: Number(cita.id),
+        ...finalizacionForm
+      })
+    });
+    setCitaCerrando(null);
+    setFinalizacionForm(emptyFinalizacion);
+    await cargarCitas();
+    const data = await authFetch(`/api/historiales/${cita.id_paciente}`);
+    setHistorial(data);
   };
 
   const eliminarPaciente = async id => {
     await authFetch(`/api/pacientes/${id}`, { method: 'DELETE' });
-    cargarPacientes();
+    await cargarPacientes();
   };
 
   const eliminarCita = async id => {
     await authFetch(`/api/citas/${id}`, { method: 'DELETE' });
-    cargarCitas();
+    await cargarCitas();
   };
 
   const buscarHistorial = async event => {
@@ -194,24 +271,50 @@ function App() {
     setHistorial(data);
   };
 
-  const crearEntrada = async event => {
-    event.preventDefault();
-    await authFetch('/api/historiales/entrada', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...entradaForm,
-        id_paciente: Number(entradaForm.id_paciente),
-        id_cita: Number(entradaForm.id_cita)
-      })
-    });
-    setEntradaForm(emptyEntrada);
-    cargarCitas();
+  const borrarHistorial = async idPaciente => {
+    await authFetch(`/api/historiales/${idPaciente}`, { method: 'DELETE' });
+    const data = await authFetch(`/api/historiales/${idPaciente}`);
+    setHistorial(data);
   };
 
   const crearUsuario = async event => {
     event.preventDefault();
-    await authFetch('/api/usuarios', { method: 'POST', body: JSON.stringify(usuarioForm) });
+    const payload = {
+      ...usuarioForm,
+      especialidad: usuarioForm.rol === 'medico' ? usuarioForm.especialidad : ''
+    };
+
+    await authFetch(usuarioEditando ? `/api/usuarios/${usuarioEditando}` : '/api/usuarios', {
+      method: usuarioEditando ? 'PUT' : 'POST',
+      body: JSON.stringify(payload)
+    });
     setUsuarioForm({ nombre: '', email: '', password: '', rol: 'medico', especialidad: '' });
+    setUsuarioEditando(null);
+    await cargarUsuarios();
+    await cargarMedicos();
+  };
+
+  const editarUsuario = user => {
+    setUsuarioEditando(user.id);
+    setUsuarioForm({
+      nombre: user.nombre,
+      email: user.email,
+      password: '',
+      rol: user.rol,
+      especialidad: user.especialidad || '',
+      activo: user.activo
+    });
+  };
+
+  const cancelarEdicionUsuario = () => {
+    setUsuarioEditando(null);
+    setUsuarioForm({ nombre: '', email: '', password: '', rol: 'medico', especialidad: '' });
+  };
+
+  const eliminarUsuario = async id => {
+    await authFetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+    await cargarUsuarios();
+    await cargarMedicos();
   };
 
   const generarPacientes = async event => {
@@ -220,7 +323,7 @@ function App() {
       method: 'POST',
       body: JSON.stringify({ cantidad: Number(cantidad) })
     });
-    cargarPacientes();
+    await cargarPacientes();
   };
 
   if (!token || !usuario) {
@@ -250,7 +353,6 @@ function App() {
           <span>Citas pendientes hoy</span>
           <strong>{pendientesHoy}</strong>
         </div>
-        <p className="notice">{socketMsg}</p>
         <button onClick={logout}>Salir</button>
       </header>
 
@@ -261,6 +363,8 @@ function App() {
           </button>
         ))}
       </nav>
+
+      {msg && <p className="error app-message">{msg}</p>}
 
       {tab === 'pacientes' && (
         <section className="panel">
@@ -296,12 +400,27 @@ function App() {
           <h2>Citas</h2>
           {usuario.rol !== 'medico' && (
             <form onSubmit={crearCita} className="grid">
-              <input placeholder="ID paciente" value={citaForm.id_paciente} onChange={e => setCitaForm({ ...citaForm, id_paciente: e.target.value })} />
-              <input placeholder="ID medico" value={citaForm.id_medico} onChange={e => setCitaForm({ ...citaForm, id_medico: e.target.value })} />
+              <select value={citaForm.id_paciente} onChange={e => setCitaForm({ ...citaForm, id_paciente: e.target.value })}>
+                <option value="">Paciente</option>
+                {pacientes.map(paciente => (
+                  <option key={paciente.id} value={paciente.id}>
+                    {paciente.nombre} {paciente.apellidos}
+                  </option>
+                ))}
+              </select>
+              <select value={citaForm.id_medico} onChange={e => setCitaForm({ ...citaForm, id_medico: e.target.value })}>
+                <option value="">Medico</option>
+                {medicos.map(medico => (
+                  <option key={medico.id} value={medico.id}>
+                    {medico.nombre}{medico.especialidad ? ` - ${medico.especialidad}` : ''}
+                  </option>
+                ))}
+              </select>
               <input type="datetime-local" value={citaForm.fecha_hora} onChange={e => setCitaForm({ ...citaForm, fecha_hora: e.target.value })} />
               <input placeholder="Motivo" value={citaForm.motivo} onChange={e => setCitaForm({ ...citaForm, motivo: e.target.value })} />
               <input type="number" min="5" value={citaForm.duracion_minutos} onChange={e => setCitaForm({ ...citaForm, duracion_minutos: e.target.value })} />
-              <button>Crear cita</button>
+              <button>{citaEditando ? 'Guardar cambios' : 'Crear cita'}</button>
+              {citaEditando && <button type="button" className="danger" onClick={cancelarEdicionCita}>Cancelar edicion</button>}
             </form>
           )}
           <div className="list">
@@ -311,11 +430,39 @@ function App() {
                 <span>{cita.medico_nombre} · {new Date(cita.fecha_hora).toLocaleString()} · {cita.estado}</span>
                 <span>{cita.motivo}</span>
                 <div className="row">
-                  {usuario.rol === 'medico' && <button onClick={() => cambiarEstado(cita.id, 'en curso')}>En curso</button>}
-                  {usuario.rol === 'medico' && <button onClick={() => cambiarEstado(cita.id, 'finalizada')}>Finalizada</button>}
-                  {(usuario.rol === 'recepcionista' || usuario.rol === 'administrador') && <button className="danger" onClick={() => cambiarEstado(cita.id, 'cancelada')}>Cancelar</button>}
+                  {usuario.rol === 'medico' && cita.estado === 'pendiente' && <button onClick={() => cambiarEstado(cita.id, 'en curso')}>En curso</button>}
+                  {usuario.rol === 'medico' && cita.estado === 'en curso' && <button onClick={() => abrirFinalizacion(cita)}>Finalizada</button>}
+                  {(usuario.rol === 'recepcionista' || usuario.rol === 'administrador') && ['pendiente', 'cancelada'].includes(cita.estado) && <button onClick={() => editarCita(cita)}>Editar</button>}
+                  {(usuario.rol === 'recepcionista' || usuario.rol === 'administrador') && cita.estado === 'pendiente' && <button className="danger" onClick={() => cancelarCita(cita.id)}>Cancelar</button>}
                   {usuario.rol === 'administrador' && <button className="danger" onClick={() => eliminarCita(cita.id)}>Eliminar</button>}
                 </div>
+                {usuario.rol === 'medico' && citaCerrando === cita.id && (
+                  <form className="clinical-form" onSubmit={event => guardarFinalizacion(event, cita)}>
+                    <h3>Cierre de cita</h3>
+                    <input
+                      placeholder="Diagnostico"
+                      required
+                      value={finalizacionForm.diagnostico}
+                      onChange={e => setFinalizacionForm({ ...finalizacionForm, diagnostico: e.target.value })}
+                    />
+                    <input
+                      placeholder="Tratamiento"
+                      required
+                      value={finalizacionForm.tratamiento}
+                      onChange={e => setFinalizacionForm({ ...finalizacionForm, tratamiento: e.target.value })}
+                    />
+                    <textarea
+                      placeholder="Observaciones"
+                      required
+                      value={finalizacionForm.observaciones}
+                      onChange={e => setFinalizacionForm({ ...finalizacionForm, observaciones: e.target.value })}
+                    />
+                    <div className="row">
+                      <button>Guardar historial y finalizar</button>
+                      <button type="button" className="danger" onClick={cancelarFinalizacion}>Cancelar</button>
+                    </div>
+                  </form>
+                )}
               </article>
             ))}
           </div>
@@ -329,20 +476,18 @@ function App() {
             <input name="id_paciente" placeholder="ID paciente" />
             <button>Consultar</button>
           </form>
-          {usuario.rol === 'medico' && (
-            <form onSubmit={crearEntrada} className="grid">
-              <input placeholder="ID paciente" value={entradaForm.id_paciente} onChange={e => setEntradaForm({ ...entradaForm, id_paciente: e.target.value })} />
-              <input placeholder="ID cita" value={entradaForm.id_cita} onChange={e => setEntradaForm({ ...entradaForm, id_cita: e.target.value })} />
-              <input placeholder="Diagnostico" value={entradaForm.diagnostico} onChange={e => setEntradaForm({ ...entradaForm, diagnostico: e.target.value })} />
-              <input placeholder="Tratamiento" value={entradaForm.tratamiento} onChange={e => setEntradaForm({ ...entradaForm, tratamiento: e.target.value })} />
-              <textarea placeholder="Observaciones" value={entradaForm.observaciones} onChange={e => setEntradaForm({ ...entradaForm, observaciones: e.target.value })} />
-              <button>Guardar entrada</button>
-            </form>
+          {historial?.paciente && (
+            <article className="item">
+              <strong>{historial.paciente.nombre_completo}</strong>
+              <span>Paciente #{historial.paciente.id}</span>
+              {usuario.rol === 'administrador' && <button className="danger" onClick={() => borrarHistorial(historial.paciente.id)}>Borrar historial</button>}
+            </article>
           )}
           <div className="list">
             {historial?.entradas?.map((entrada, index) => (
               <article className="item" key={`${entrada.fecha}-${index}`}>
-                <strong>{new Date(entrada.fecha).toLocaleString()} · medico #{entrada.id_medico}</strong>
+                <strong>{new Date(entrada.fecha).toLocaleString()} · {entrada.medico?.nombre_completo || `medico #${entrada.id_medico}`}</strong>
+                {entrada.medico?.especialidad && <span>Especialidad: {entrada.medico.especialidad}</span>}
                 <span>Diagnostico: {entrada.diagnostico}</span>
                 <span>Tratamiento: {entrada.tratamiento}</span>
                 <span>{entrada.observaciones}</span>
@@ -358,20 +503,32 @@ function App() {
           <form onSubmit={crearUsuario} className="grid">
             <input placeholder="Nombre" value={usuarioForm.nombre} onChange={e => setUsuarioForm({ ...usuarioForm, nombre: e.target.value })} />
             <input placeholder="Email" value={usuarioForm.email} onChange={e => setUsuarioForm({ ...usuarioForm, email: e.target.value })} />
-            <input placeholder="Password" type="password" value={usuarioForm.password} onChange={e => setUsuarioForm({ ...usuarioForm, password: e.target.value })} />
-            <select value={usuarioForm.rol} onChange={e => setUsuarioForm({ ...usuarioForm, rol: e.target.value })}>
+            <input placeholder={usuarioEditando ? 'Nueva password opcional' : 'Password'} type="password" value={usuarioForm.password} onChange={e => setUsuarioForm({ ...usuarioForm, password: e.target.value })} />
+            <select value={usuarioForm.rol} disabled={usuarioEditando === usuario.id} onChange={e => setUsuarioForm({ ...usuarioForm, rol: e.target.value })}>
               <option value="medico">Medico</option>
               <option value="recepcionista">Recepcionista</option>
               <option value="administrador">Administrador</option>
             </select>
-            <input placeholder="Especialidad" value={usuarioForm.especialidad} onChange={e => setUsuarioForm({ ...usuarioForm, especialidad: e.target.value })} />
-            <button>Crear usuario</button>
+            {usuarioForm.rol === 'medico' && <input placeholder="Especialidad" value={usuarioForm.especialidad} onChange={e => setUsuarioForm({ ...usuarioForm, especialidad: e.target.value })} />}
+            <button>{usuarioEditando ? 'Guardar usuario' : 'Crear usuario'}</button>
+            {usuarioEditando && <button type="button" className="danger" onClick={cancelarEdicionUsuario}>Cancelar edicion</button>}
           </form>
+          <div className="list">
+            {usuarios.map(user => (
+              <article className="item" key={user.id}>
+                <strong>#{user.id} {user.nombre}</strong>
+                <span>{user.email} · {user.rol}{user.especialidad ? ` · ${user.especialidad}` : ''}</span>
+                <div className="row">
+                  <button onClick={() => editarUsuario(user)}>Editar</button>
+                  {user.id !== usuario.id && <button className="danger" onClick={() => eliminarUsuario(user.id)}>Borrar</button>}
+                </div>
+              </article>
+            ))}
+          </div>
           <form onSubmit={generarPacientes} className="inline">
             <input type="number" min="1" value={cantidad} onChange={e => setCantidad(e.target.value)} />
             <button>Generar pacientes</button>
           </form>
-          {metricas && <pre>{JSON.stringify(metricas, null, 2)}</pre>}
         </section>
       )}
     </main>
