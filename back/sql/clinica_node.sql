@@ -30,7 +30,7 @@ CREATE TABLE citas (
   id_medico INT NOT NULL,
   fecha_hora DATETIME NOT NULL,
   motivo VARCHAR(255) NOT NULL,
-  estado ENUM('pendiente', 'en curso', 'finalizada', 'cancelada') NOT NULL DEFAULT 'pendiente',
+  estado ENUM('pendiente', 'en curso', 'finalizada', 'no presentado', 'cancelada') NOT NULL DEFAULT 'pendiente',
   duracion_minutos INT NOT NULL DEFAULT 30,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_paciente) REFERENCES pacientes(id),
@@ -42,16 +42,18 @@ CREATE INDEX idx_citas_medico_estado ON citas(id_medico, estado);
 CREATE INDEX idx_pacientes_dni ON pacientes(dni);
 
 INSERT INTO usuarios (nombre, email, password_hash, rol, especialidad) VALUES
-('Admin Clinica', 'admin@clinica.test', '$2b$10$gOYX6hZTDvQB77QvU6mqSuW.5U6XcT2nyVKmJvQZp3E27hJHkg31m', 'administrador', NULL),
-('Dra. Laura Mesa', 'laura@clinica.test', '$2b$10$gOYX6hZTDvQB77QvU6mqSuW.5U6XcT2nyVKmJvQZp3E27hJHkg31m', 'medico', 'Medicina general'),
-('Recepcion Norte', 'recepcion@clinica.test', '$2b$10$gOYX6hZTDvQB77QvU6mqSuW.5U6XcT2nyVKmJvQZp3E27hJHkg31m', 'recepcionista', NULL);
+('Admin Clinica', 'admin@clinica.test', '$2b$10$r/A03u0NuyC5wuTxl1ZI..xCExKv5ThmO7JlgjScUI2Kejd05uq8C', 'administrador', NULL),
+('Dra. Laura Mesa', 'laura@clinica.test', '$2b$10$r/A03u0NuyC5wuTxl1ZI..xCExKv5ThmO7JlgjScUI2Kejd05uq8C', 'medico', 'Medicina general'),
+('Recepcion Norte', 'recepcion@clinica.test', '$2b$10$r/A03u0NuyC5wuTxl1ZI..xCExKv5ThmO7JlgjScUI2Kejd05uq8C', 'recepcionista', NULL);
 
 INSERT INTO pacientes (nombre, apellidos, dni, telefono, email, fecha_nacimiento) VALUES
 ('Ana', 'Garcia Lopez', '12345678Z', '600111222', 'ana.garcia@test.local', '1988-03-12'),
-('Javier', 'Ruiz Martin', '87654321X', '600333444', 'javier.ruiz@test.local', '1975-10-04');
+('Javier', 'Ruiz Martin', '87654321X', '600333444', 'javier.ruiz@test.local', '1975-10-04'),
+('Alba', 'Maqueda', '11223344A', '600555666', 'alba.maqueda@test.local', '1992-07-21');
 
 INSERT INTO citas (id_paciente, id_medico, fecha_hora, motivo, estado, duracion_minutos) VALUES
-(1, 2, CONCAT(CURDATE(), ' 10:30:00'), 'Revision general', 'pendiente', 30),
-(2, 2, CONCAT(CURDATE(), ' 12:00:00'), 'Seguimiento tratamiento', 'finalizada', 45);
+(1, 2, DATE_SUB(NOW(), INTERVAL 1 HOUR), 'Revision general no presentada', 'no presentado', 30),
+(2, 2, NOW(), 'Seguimiento tratamiento finalizado', 'finalizada', 45),
+(3, 2, DATE_ADD(NOW(), INTERVAL 1 HOUR), 'Primera consulta pendiente', 'pendiente', 30);
 
 -- Password de los tres usuarios de prueba: 123456

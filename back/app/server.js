@@ -20,6 +20,7 @@ import { router as pacienteRoutes } from '../routes/pacienteRoutes.js';
 import { router as citaRoutes } from '../routes/citaRoutes.js';
 import { router as historialRoutes } from '../routes/historialRoutes.js';
 import { router as metricasRoutes } from '../routes/metricasRoutes.js';
+import { router as sistemaRoutes } from '../routes/sistemaRoutes.js';
 
 class Server {
   constructor() {
@@ -34,6 +35,7 @@ class Server {
     this.citasPath = '/api/citas';
     this.historialesPath = '/api/historiales';
     this.metricasPath = '/api/metricas';
+    this.sistemaPath = '/api/sistema';
 
     this.middlewares();
     this.conectarMongoose();
@@ -92,6 +94,7 @@ class Server {
     this.app.use(this.citasPath, citaRoutes);
     this.app.use(this.historialesPath, historialRoutes);
     this.app.use(this.metricasPath, metricasRoutes);
+    this.app.use(this.sistemaPath, sistemaRoutes);
   }
 
   async start() {
@@ -109,6 +112,15 @@ class Server {
   }
 
   listen() {
+    this.httpServer.once('error', error => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`El puerto ${env.PORT} ya esta ocupado. Cierra el backend anterior o ejecuta: npm run stop:back desde la raiz.`);
+        process.exit(1);
+      }
+
+      throw error;
+    });
+
     this.httpServer.listen(env.PORT, () => {
       console.log(kleur.green(`Servidor escuchando en: ${env.DB_URL_GRAPHQL}:${env.PORT}`));
       console.log(kleur.blue(`API Auth: ${env.DB_URL_GRAPHQL}:${env.PORT}${this.authPath}`));

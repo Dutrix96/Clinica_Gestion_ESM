@@ -1,5 +1,6 @@
 import { pool } from '../database/mysql.js';
 import Historial from '../models/historialMongoose.js';
+import { actualizarNoPresentados } from '../helpers/citasEstado.js';
 
 const comprobarRol = (context, roles) => {
   if (!context.user || !roles.some(rol => context.user.roles.includes(rol))) {
@@ -16,6 +17,7 @@ const resolvers = {
   Query: {
     citasFinalizadasPorMedico: async (_, args, context) => {
       comprobarRol(context, ['administrador']);
+      await actualizarNoPresentados();
       const [rows] = await pool.query(`
         SELECT u.id id_medico, u.nombre medico, COUNT(c.id) total
           FROM usuarios u
@@ -28,6 +30,7 @@ const resolvers = {
     },
     citasPendientesHoy: async (_, args, context) => {
       comprobarRol(context, ['administrador', 'recepcionista', 'medico']);
+      await actualizarNoPresentados();
       let sql = `
         SELECT c.id, c.id_paciente, CONCAT(p.nombre, ' ', p.apellidos) paciente,
                c.id_medico, u.nombre medico, c.fecha_hora, c.motivo, c.estado,
@@ -51,6 +54,7 @@ const resolvers = {
     },
     duracionPromedioPorMedico: async (_, args, context) => {
       comprobarRol(context, ['administrador']);
+      await actualizarNoPresentados();
       const [rows] = await pool.query(`
         SELECT u.id id_medico, u.nombre medico, AVG(c.duracion_minutos) promedio_minutos
           FROM usuarios u
