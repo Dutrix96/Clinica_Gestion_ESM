@@ -1,0 +1,24 @@
+[
+  {
+    "id_paciente": 1,
+    "entradas": [
+      {
+        "fecha": "2026-05-15T09:00:00.000Z",
+        "id_medico": 2,
+        "id_cita": 2,
+        "observaciones": "Paciente estable, sin fiebre y con buena tolerancia al tratamiento.",
+        "diagnostico": "Control de hipertension",
+        "tratamiento": "Mantener pauta actual y revision en 30 dias.",
+        "archivos_adjuntos": []
+      }
+    ]
+  },
+  {
+    "id_paciente": 2,
+    "entradas": []
+  },
+  {
+    "id_paciente": 3,
+    "entradas": []
+  }
+]
