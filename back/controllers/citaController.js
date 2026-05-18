@@ -2,6 +2,10 @@ import { pool } from '../database/mysql.js';
 import { emitirActualizacionCitas } from '../helpers/socket.js';
 import { actualizarNoPresentados, ESTADOS_CITA } from '../helpers/citasEstado.js';
 
+const MENSAJE_CITA_PASADO = 'Fernando no tienes un Delorian para viajar al pasado';
+
+const fechaEnPasado = fecha => new Date(fecha).getTime() < Date.now();
+
 export const citasGet = async (req, res) => {
   await actualizarNoPresentados();
 
@@ -44,6 +48,11 @@ export const citasGet = async (req, res) => {
 
 export const citasPost = async (req, res) => {
   const { id_paciente, id_medico, fecha_hora, motivo, duracion_minutos = 30 } = req.body;
+
+  if (fechaEnPasado(fecha_hora)) {
+    return res.status(400).json({ msg: MENSAJE_CITA_PASADO });
+  }
+
   const [[paciente]] = await pool.query('SELECT id FROM pacientes WHERE id = ?', [id_paciente]);
 
   if (!paciente) {
@@ -117,6 +126,11 @@ export const citaEstadoPut = async (req, res) => {
 
 export const citasPut = async (req, res) => {
   const { id_paciente, id_medico, fecha_hora, motivo, duracion_minutos = 30 } = req.body;
+
+  if (fechaEnPasado(fecha_hora)) {
+    return res.status(400).json({ msg: MENSAJE_CITA_PASADO });
+  }
+
   const [[cita]] = await pool.query('SELECT id, estado FROM citas WHERE id = ?', [req.params.id]);
 
   if (!cita) {

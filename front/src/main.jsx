@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import './styles.css';
 
 const API = '';
+const MENSAJE_CITA_PASADO = 'Fernando no tienes un Delorian para viajar al pasado';
 
 const emptyPaciente = {
   nombre: '',
@@ -176,6 +177,12 @@ function App() {
 
   const crearCita = async event => {
     event.preventDefault();
+
+    if (new Date(citaForm.fecha_hora).getTime() < Date.now()) {
+      setMsg(MENSAJE_CITA_PASADO);
+      return;
+    }
+
     const payload = {
       ...citaForm,
       id_paciente: Number(citaForm.id_paciente),
